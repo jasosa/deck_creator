@@ -1,0 +1,142 @@
+.properties-panel {
+  padding: 12px;
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.properties-panel--empty {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.properties-panel__hint {
+  color: #64748b;
+  font-size: 11px;
+  margin: 0;
+}
+
+.properties-panel h3 {
+  font-size: 13px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.properties-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.properties-panel input,
+.properties-panel select,
+.properties-panel textarea {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.properties-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.properties-panel__zindex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #475569;
+}
+
+.properties-panel__zindex-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.properties-panel__zindex-buttons button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.properties-panel__opacity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.properties-panel__toggles {
+  display: flex;
+  gap: 4px;
+}
+
+.properties-panel__toggles button {
+  width: 30px;
+  height: 26px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.properties-panel__toggles button.active {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+
+.properties-panel__asset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.properties-panel__asset button,
+.properties-panel > button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.properties-panel__footer-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.properties-panel__footer-actions button {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.properties-panel__delete {
+  color: #b91c1c;
+  border-color: #fca5a5 !important;
+}
+
+.properties-panel__delete:hover {
+  background: #fef2f2 !important;
+}

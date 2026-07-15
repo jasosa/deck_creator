@@ -1,0 +1,78 @@
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border-bottom: 1px solid #334155;
+}
+
+.top-bar__name {
+  font-size: 15px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 160px;
+}
+
+.top-bar__name:hover,
+.top-bar__name:focus {
+  border-color: #475569;
+  outline: none;
+}
+
+.top-bar__field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.top-bar__custom-size {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.top-bar__custom-size input {
+  width: 60px;
+}
+
+.top-bar__spacer {
+  flex: 1;
+}
+
+.top-bar button {
+  background: #334155;
+  color: #f1f5f9;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.top-bar button:hover {
+  background: #475569;
+}
+
+.top-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.top-bar button:disabled:hover {
+  background: #334155;
+}
+
+.top-bar__danger:hover {
+  background: #7f1d1d;
+  border-color: #991b1b;
+}

@@ -1,0 +1,36 @@
+.resize-handle {
+  flex-shrink: 0;
+  background: transparent;
+  position: relative;
+  z-index: 5;
+}
+
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  background: transparent;
+  transition: background 0.1s ease;
+}
+
+.resize-handle--vertical {
+  width: 5px;
+  cursor: col-resize;
+}
+
+.resize-handle--vertical::after {
+  inset: 0 -2px;
+}
+
+.resize-handle--horizontal {
+  height: 5px;
+  cursor: row-resize;
+}
+
+.resize-handle--horizontal::after {
+  inset: -2px 0;
+}
+
+.resize-handle:hover::after,
+.resize-handle:active::after {
+  background: #6366f1;
+}
