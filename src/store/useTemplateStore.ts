@@ -158,6 +158,7 @@ export const useTemplateStore = create<TemplateStore>()(
           const idx = s.template.elements.findIndex((el) => el.id === id);
           if (idx === -1) return {};
           const original = s.template.elements[idx];
+          if (!original) return {};
           const copy: CardElement = { ...original, id: newId(), x: original.x + 10, y: original.y + 10 };
           const elements = [...s.template.elements];
           elements.splice(idx + 1, 0, copy);
@@ -203,6 +204,7 @@ export const useTemplateStore = create<TemplateStore>()(
           const idx = elements.findIndex((el) => el.id === id);
           if (idx === -1) return {};
           const [el] = elements.splice(idx, 1);
+          if (!el) return {};
           if (direction === 'front') elements.push(el);
           else if (direction === 'back') elements.unshift(el);
           else if (direction === 'up') elements.splice(Math.min(idx + 1, elements.length), 0, el);
