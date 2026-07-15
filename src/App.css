@@ -4,6 +4,15 @@
   height: 100vh;
 }
 
+.app__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #64748b;
+  font-family: system-ui, sans-serif;
+}
+
 .app__body {
   display: flex;
   flex: 1;

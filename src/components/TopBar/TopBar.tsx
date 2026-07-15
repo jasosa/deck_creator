@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
-import { useTemplateStore } from '../../store/useTemplateStore';
+import { useTemplateStore, useTemporalTemplateStore } from '../../store/useTemplateStore';
 import { CARD_SIZE_PRESETS } from '../../constants/cardSizes';
 import { downloadJson } from '../../utils/downloadFile';
-import type { Template, ImageAsset } from '../../types';
+import { TemplateBundleSchema } from '../../utils/templateSchema';
 import './TopBar.css';
 
 export function TopBar() {
@@ -14,7 +14,9 @@ export function TopBar() {
   const loadTemplateBundle = useTemplateStore((s) => s.loadTemplateBundle);
   const resetTemplate = useTemplateStore((s) => s.resetTemplate);
   const undo = useTemplateStore((s) => s.undo);
-  const canUndo = useTemplateStore((s) => s.history.length > 0);
+  const redo = useTemplateStore((s) => s.redo);
+  const canUndo = useTemporalTemplateStore((s) => s.pastStates.length > 0);
+  const canRedo = useTemporalTemplateStore((s) => s.futureStates.length > 0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customUnit, setCustomUnit] = useState<'mm' | 'in'>('mm');
@@ -42,13 +44,19 @@ export function TopBar() {
     e.target.value = '';
     if (!file) return;
     const text = await file.text();
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(text) as { template: Template; assets: Record<string, ImageAsset> };
-      if (!parsed.template) throw new Error('Missing template');
-      loadTemplateBundle({ template: parsed.template, assets: parsed.assets ?? {} });
+      parsed = JSON.parse(text);
     } catch {
-      alert('Could not load this file — it does not look like a valid deck template JSON.');
+      alert('Could not load this file — it is not valid JSON.');
+      return;
     }
+    const result = TemplateBundleSchema.safeParse(parsed);
+    if (!result.success) {
+      alert('Could not load this file — it does not look like a valid deck template.');
+      return;
+    }
+    loadTemplateBundle(result.data);
   };
 
   return (
@@ -97,6 +105,9 @@ export function TopBar() {
 
       <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
         Undo
+      </button>
+      <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z / Ctrl+Y)">
+        Redo
       </button>
       <button onClick={handleSave}>Save template</button>
       <button onClick={handleLoadClick}>Load template</button>

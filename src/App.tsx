@@ -8,6 +8,7 @@ import { ExportPanel } from './components/ExportPanel/ExportPanel';
 import { DataPanel } from './components/DataPanel/DataPanel';
 import { ResizeHandle } from './components/ResizeHandle/ResizeHandle';
 import { useResizablePanel } from './hooks/useResizablePanel';
+import { useTemplateStore } from './store/useTemplateStore';
 import './App.css';
 
 const LEFT_MIN = 180;
@@ -22,6 +23,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function App() {
+  const hasHydrated = useTemplateStore((s) => s.hasHydrated);
   const [leftWidth, setLeftWidth] = useResizablePanel('panel-width-left', 220);
   const [rightWidth, setRightWidth] = useResizablePanel('panel-width-right', 260);
   const [bottomHeight, setBottomHeight] = useResizablePanel('panel-height-bottom', 260);
@@ -40,6 +42,13 @@ function App() {
     (delta: number) => setBottomHeight((h) => clamp(h - delta, BOTTOM_MIN, BOTTOM_MAX)),
     [setBottomHeight],
   );
+
+  // Storage now rehydrates asynchronously from IndexedDB (see useTemplateStore.ts),
+  // so without this gate the app would flash the blank default template for a
+  // moment before the saved one loads.
+  if (!hasHydrated) {
+    return <div className="app__loading">Loading your deck…</div>;
+  }
 
   return (
     <div className="app">

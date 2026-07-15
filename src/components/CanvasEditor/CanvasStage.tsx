@@ -93,9 +93,16 @@ export function CanvasStage() {
       const activeTag = (document.activeElement as HTMLElement | null)?.tagName;
       if (activeTag && EDITABLE_TAGS.has(activeTag)) return;
 
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        useTemplateStore.getState().undo();
+        if (e.shiftKey) useTemplateStore.getState().redo();
+        else useTemplateStore.getState().undo();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        useTemplateStore.getState().redo();
         return;
       }
 

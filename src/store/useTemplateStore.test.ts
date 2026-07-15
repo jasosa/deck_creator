@@ -1,5 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTemplateStore } from './useTemplateStore';
+
+// The store coalesces rapid template edits into a single undo step (see
+// leadingEdgeDebounce.ts) using a 500ms real-world debounce. Fake timers
+// make that deterministic: advancing past 500ms between two actions puts
+// them in separate "bursts" (separately undoable); calling them back to
+// back with no advance keeps them in the same burst (undo reverts both
+// together, by design).
+const DEBOUNCE_MS = 500;
 
 function addLabel() {
   useTemplateStore.getState().addElement('label');
@@ -7,8 +15,17 @@ function addLabel() {
   return elements[elements.length - 1]!;
 }
 
+function nextBurst() {
+  vi.advanceTimersByTime(DEBOUNCE_MS);
+}
+
 beforeEach(() => {
+  vi.useFakeTimers();
   useTemplateStore.getState().resetTemplate();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('reorderElement', () => {
@@ -116,9 +133,10 @@ describe('alignSelectedElements', () => {
   });
 });
 
-describe('undo', () => {
-  it('reverts the most recent change to the template', () => {
+describe('undo/redo', () => {
+  it('reverts an isolated change made in its own burst', () => {
     const a = addLabel();
+    nextBurst();
     useTemplateStore.getState().updateElement(a.id, { x: 99 });
     expect(useTemplateStore.getState().template.elements[0]!.x).toBe(99);
 
@@ -130,5 +148,104 @@ describe('undo', () => {
   it('is a no-op with empty history', () => {
     useTemplateStore.getState().undo();
     expect(useTemplateStore.getState().template.elements).toEqual([]);
+  });
+
+  it('coalesces a burst of rapid edits into a single undo step', () => {
+    const a = addLabel();
+    nextBurst();
+
+    useTemplateStore.getState().updateElement(a.id, { x: 20 });
+    useTemplateStore.getState().updateElement(a.id, { x: 50 });
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(99);
+
+    useTemplateStore.getState().undo();
+
+    // one Ctrl+Z reverts the whole burst back to before it started, not
+    // just the last of the three updates
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(a.x);
+  });
+
+  it('treats edits in separate bursts as separate undo steps', () => {
+    const a = addLabel();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 20 });
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(99);
+
+    useTemplateStore.getState().undo();
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(20);
+
+    useTemplateStore.getState().undo();
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(a.x);
+  });
+
+  it('redo re-applies an undone change', () => {
+    const a = addLabel();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+
+    useTemplateStore.getState().undo();
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(a.x);
+
+    useTemplateStore.getState().redo();
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(99);
+  });
+
+  it('redo is a no-op with empty future', () => {
+    const a = addLabel();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+
+    useTemplateStore.getState().redo();
+
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(99);
+  });
+
+  it('a new edit after undo clears the redo stack', () => {
+    const a = addLabel();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 20 });
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+
+    useTemplateStore.getState().undo();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 5 });
+
+    useTemplateStore.getState().redo();
+    // nothing to redo — the x:99 branch was discarded by the new edit
+    expect(useTemplateStore.getState().template.elements[0]!.x).toBe(5);
+  });
+
+  it('clears the selection on undo and redo', () => {
+    const a = addLabel();
+    nextBurst();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+    useTemplateStore.getState().selectElement(a.id);
+    expect(useTemplateStore.getState().selectedElementIds).toEqual([a.id]);
+
+    useTemplateStore.getState().undo();
+    expect(useTemplateStore.getState().selectedElementIds).toEqual([]);
+
+    useTemplateStore.getState().selectElement(a.id);
+    useTemplateStore.getState().redo();
+    expect(useTemplateStore.getState().selectedElementIds).toEqual([]);
+  });
+
+  it('resetTemplate clears undo/redo history and any pending debounce cooldown', () => {
+    const a = addLabel();
+    useTemplateStore.getState().updateElement(a.id, { x: 99 });
+
+    useTemplateStore.getState().resetTemplate();
+    useTemplateStore.getState().undo();
+
+    expect(useTemplateStore.getState().template.elements).toEqual([]);
+
+    // the debounce cooldown from the pre-reset burst must not suppress
+    // the first edit of the fresh template
+    addLabel();
+    expect(useTemplateStore.temporal.getState().pastStates.length).toBeGreaterThan(0);
   });
 });

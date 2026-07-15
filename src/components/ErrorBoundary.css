@@ -1,0 +1,30 @@
+.error-boundary {
+  max-width: 480px;
+  margin: 15vh auto;
+  padding: 24px;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.error-boundary__message {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 8px 12px;
+  text-align: left;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.error-boundary__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.error-boundary__hint {
+  color: #64748b;
+  font-size: 12px;
+}
