@@ -49,12 +49,13 @@ describe('TemplateBundleSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('fills in bleedMm/safeZoneMm defaults for a bundle saved before those fields existed', () => {
+  it('fills in bleedMm/safeZoneMm/cardBack defaults for a bundle saved before those fields existed', () => {
     const result = TemplateBundleSchema.safeParse(validBundle());
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.data.template.bleedMm).toBe(2);
     expect(result.data.template.safeZoneMm).toBe(3);
+    expect(result.data.template.cardBack).toEqual({ assetId: null, color: '#ffffff' });
   });
 
   it('accepts every element type', () => {

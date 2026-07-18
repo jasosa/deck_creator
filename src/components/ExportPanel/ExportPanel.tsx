@@ -14,6 +14,7 @@ export function ExportPanel() {
   const [marginMm, setMarginMm] = useState(10);
   const [gapMm, setGapMm] = useState(3);
   const [showCropMarks, setShowCropMarks] = useState(true);
+  const [includeBacks, setIncludeBacks] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
 
@@ -28,7 +29,7 @@ export function ExportPanel() {
         template,
         assets,
         dataSheet,
-        { paperSize, marginMm, gapMm, showCropMarks },
+        { paperSize, marginMm, gapMm, showCropMarks, includeBacks },
         (done, total) => setProgress({ done, total }),
       );
       downloadFile(`${template.name || 'deck'}.pdf`, blob);
@@ -62,6 +63,10 @@ export function ExportPanel() {
         <input type="checkbox" checked={showCropMarks} onChange={(e) => setShowCropMarks(e.target.checked)} />
         Show crop marks
       </label>
+      <label className="export-panel__checkbox">
+        <input type="checkbox" checked={includeBacks} onChange={(e) => setIncludeBacks(e.target.checked)} />
+        Include card backs
+      </label>
       {bleedOverlapsGap && (
         <p className="export-panel__warning">
           Gap ({gapMm}mm) is smaller than 2× the template&apos;s bleed ({template.bleedMm * 2}mm) — adjacent cards&apos;
@@ -70,6 +75,7 @@ export function ExportPanel() {
       )}
       <p className="export-panel__hint">
         {cardCount} card{cardCount === 1 ? '' : 's'} will be exported{dataSheet ? ' (one per data row)' : ' (no data sheet loaded — a single blank card)'}.
+        {includeBacks && ' Back pages (same design for every card) will be appended after the fronts.'}
       </p>
       <button disabled={exporting} onClick={handleExport}>
         {exporting ? `Rendering ${progress.done}/${progress.total}…` : 'Export deck as PDF'}

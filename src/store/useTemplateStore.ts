@@ -22,6 +22,7 @@ const DEFAULT_TEMPLATE: Template = {
   elements: [],
   bleedMm: 2,
   safeZoneMm: 3,
+  cardBack: { assetId: null, color: '#ffffff' },
 };
 
 function newId(): string {
@@ -77,6 +78,8 @@ type TemplateStore = {
   setSafeZoneMm: (mm: number) => void;
   setBackgroundColor: (color: string) => void;
   setBackgroundAsset: (assetId: string | null) => void;
+  setCardBackColor: (color: string) => void;
+  setCardBackAsset: (assetId: string | null) => void;
 
   addElement: (type: ElementType) => void;
   duplicateElement: (id: string) => void;
@@ -179,6 +182,16 @@ export const useTemplateStore = create<TemplateStore>()(
         setBackgroundAsset: (assetId) =>
           set((s) => ({
             template: { ...s.template, background: { ...s.template.background, assetId } },
+          })),
+
+        setCardBackColor: (color) =>
+          set((s) => ({
+            template: { ...s.template, cardBack: { ...s.template.cardBack, color } },
+          })),
+
+        setCardBackAsset: (assetId) =>
+          set((s) => ({
+            template: { ...s.template, cardBack: { ...s.template.cardBack, assetId } },
           })),
 
         addElement: (type) =>
@@ -334,11 +347,12 @@ export const useTemplateStore = create<TemplateStore>()(
       {
         name: 'deck-card-creator-template',
         storage: createJSONStorage<PersistedTemplateState>(() => idbStorage),
-        // Bumped from 1 -> 2 for the bleedMm/safeZoneMm fields (see types.ts,
-        // templateSchema.ts). Version mismatch is what makes `migrate` below
-        // actually run for existing users' v1 data — the zod defaults then
-        // backfill the new fields rather than the schema rejecting old saves.
-        version: 2,
+        // Bumped 1 -> 2 for bleedMm/safeZoneMm, 2 -> 3 for cardBack (see
+        // types.ts, templateSchema.ts). Version mismatch is what makes
+        // `migrate` below actually run for existing users' older data — the
+        // zod defaults then backfill the new fields rather than the schema
+        // rejecting old saves.
+        version: 3,
         partialize: (s) => ({ template: s.template, assets: s.assets }),
         migrate: (persistedState) => {
           const result = TemplateBundleSchema.safeParse(persistedState);

@@ -70,6 +70,10 @@ export type Template = {
   elements: CardElement[];
   bleedMm: number;
   safeZoneMm: number;
+  // The back is the same for every card in the deck — no elements, no
+  // per-row data binding, just a background (unlike `background` above,
+  // which the front's elements render on top of).
+  cardBack: { assetId: string | null; color: string };
 };
 
 export type DataSheet = {

@@ -81,11 +81,23 @@ async function addElementToLayer(
   }
 }
 
-export async function renderCardToDataUrl(
-  template: Template,
-  assets: Record<string, ImageAsset>,
-  row: Record<string, string> | undefined,
-): Promise<string> {
+type BleedStage = {
+  container: HTMLDivElement;
+  stage: Konva.Stage;
+  layer: Konva.Layer;
+  content: Konva.Group;
+  widthPx: number;
+  heightPx: number;
+  bleedPx: number;
+};
+
+// Shared by renderCardToDataUrl and renderCardBackToDataUrl: an off-DOM
+// Konva stage sized to the card's trim size plus bleed on every side, with
+// a `content` group offset by the bleed amount so trim-box-relative
+// coordinates (element x/y, or the -bleedPx/-bleedPx background rect below)
+// don't need to know bleed exists (see CanvasStage.tsx for the same trick
+// in the editor).
+function createBleedStage(template: Template): BleedStage {
   const trimWidthPx = mmToPx(template.cardSize.widthMm, EDITOR_DPI);
   const trimHeightPx = mmToPx(template.cardSize.heightMm, EDITOR_DPI);
   const bleedPx = mmToPx(template.bleedMm, EDITOR_DPI);
@@ -102,35 +114,72 @@ export async function renderCardToDataUrl(
     const stage = new Konva.Stage({ container, width: widthPx, height: heightPx });
     const layer = new Konva.Layer();
     stage.add(layer);
-    // Element x/y stay trim-box-relative (see CanvasStage.tsx); offsetting
-    // this group by the bleed amount is what grows the printed art into the
-    // bleed strip without renumbering any element's stored coordinates.
     const content = new Konva.Group({ x: bleedPx, y: bleedPx });
     layer.add(content);
 
-    content.add(
-      new Konva.Rect({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, fill: template.background.color }),
-    );
+    return { container, stage, layer, content, widthPx, heightPx, bleedPx };
+  } catch (e) {
+    container.remove();
+    throw e;
+  }
+}
 
-    const bgAsset = template.background.assetId ? assets[template.background.assetId] : undefined;
-    if (bgAsset) {
-      try {
-        const img = await loadImage(bgAsset.dataUrl);
-        content.add(new Konva.Image({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, image: img }));
-      } catch {
-        /* skip background image that fails to decode */
-      }
-    }
+async function drawBackgroundLayer(
+  content: Konva.Group,
+  background: { assetId: string | null; color: string },
+  assets: Record<string, ImageAsset>,
+  widthPx: number,
+  heightPx: number,
+  bleedPx: number,
+) {
+  content.add(new Konva.Rect({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, fill: background.color }));
 
+  const asset = background.assetId ? assets[background.assetId] : undefined;
+  if (!asset) return;
+  try {
+    const img = await loadImage(asset.dataUrl);
+    content.add(new Konva.Image({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, image: img }));
+  } catch {
+    /* skip background image that fails to decode */
+  }
+}
+
+function rasterize(stage: Konva.Stage, layer: Konva.Layer): string {
+  layer.draw();
+  const pixelRatio = EXPORT_DPI / EDITOR_DPI;
+  const dataUrl = stage.toDataURL({ pixelRatio, mimeType: 'image/png' });
+  stage.destroy();
+  return dataUrl;
+}
+
+export async function renderCardToDataUrl(
+  template: Template,
+  assets: Record<string, ImageAsset>,
+  row: Record<string, string> | undefined,
+): Promise<string> {
+  const { container, stage, layer, content, widthPx, heightPx, bleedPx } = createBleedStage(template);
+  try {
+    await drawBackgroundLayer(content, template.background, assets, widthPx, heightPx, bleedPx);
     for (const el of template.elements) {
       await addElementToLayer(content, el, assets, row);
     }
+    return rasterize(stage, layer);
+  } finally {
+    container.remove();
+  }
+}
 
-    layer.draw();
-    const pixelRatio = EXPORT_DPI / EDITOR_DPI;
-    const dataUrl = stage.toDataURL({ pixelRatio, mimeType: 'image/png' });
-    stage.destroy();
-    return dataUrl;
+// The back is the same for every card in the deck (see types.ts) — no
+// elements, no per-row data, just a background — so this only ever needs
+// to be called once per export, not once per row like renderCardToDataUrl.
+export async function renderCardBackToDataUrl(
+  template: Template,
+  assets: Record<string, ImageAsset>,
+): Promise<string> {
+  const { container, stage, layer, content, widthPx, heightPx, bleedPx } = createBleedStage(template);
+  try {
+    await drawBackgroundLayer(content, template.cardBack, assets, widthPx, heightPx, bleedPx);
+    return rasterize(stage, layer);
   } finally {
     container.remove();
   }

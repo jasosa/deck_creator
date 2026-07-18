@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { PAPER_SIZES } from '../constants/cardSizes';
-import { renderCardToDataUrl } from './renderCard';
+import { renderCardToDataUrl, renderCardBackToDataUrl } from './renderCard';
 import type { DataSheet, ImageAsset, Template } from '../types';
 
 export type ExportOptions = {
@@ -8,6 +8,7 @@ export type ExportOptions = {
   marginMm: number;
   gapMm: number;
   showCropMarks: boolean;
+  includeBacks: boolean;
 };
 
 export type PageLayout = {
@@ -74,6 +75,31 @@ export function cropMarksFor(x: number, y: number, cardW: number, cardH: number,
   ]);
 }
 
+// Draws one already-rendered (bleed-sized) card PNG at its trim-grid
+// position, plus crop marks if enabled. Shared by the front-card loop and
+// the card-back loop below so both stay pixel-aligned to the same grid.
+function placeCard(
+  pdf: jsPDF,
+  dataUrl: string,
+  x: number,
+  y: number,
+  cardW: number,
+  cardH: number,
+  bleed: number,
+  showCropMarks: boolean,
+) {
+  // renderCardToDataUrl/renderCardBackToDataUrl rasterize the bleed-sized
+  // canvas (trim + bleed on each side), so the image must be placed/sized
+  // to match, keeping the trim edge aligned to the page grid.
+  pdf.addImage(dataUrl, 'PNG', x - bleed, y - bleed, cardW + bleed * 2, cardH + bleed * 2);
+  if (!showCropMarks) return;
+  pdf.setDrawColor(0);
+  pdf.setLineWidth(0.15);
+  for (const mark of cropMarksFor(x, y, cardW, cardH, bleed)) {
+    pdf.line(mark.x1, mark.y1, mark.x2, mark.y2);
+  }
+}
+
 export async function exportDeckPdf(
   template: Template,
   assets: Record<string, ImageAsset>,
@@ -96,18 +122,25 @@ export async function exportDeckPdf(
     const dataUrl = await renderCardToDataUrl(template, assets, rows[i]);
     const { page, x, y } = layout.positionFor(i);
     if (page > 0 && i % layout.perPage === 0) pdf.addPage([paper.widthMm, paper.heightMm]);
-    // renderCardToDataUrl rasterizes the bleed-sized canvas (trim + bleed on
-    // each side), so the image must be placed/sized to match, keeping the
-    // trim edge aligned to the page grid computed above.
-    pdf.addImage(dataUrl, 'PNG', x - bleed, y - bleed, cardW + bleed * 2, cardH + bleed * 2);
-    if (options.showCropMarks) {
-      pdf.setDrawColor(0);
-      pdf.setLineWidth(0.15);
-      for (const mark of cropMarksFor(x, y, cardW, cardH, bleed)) {
-        pdf.line(mark.x1, mark.y1, mark.x2, mark.y2);
+    placeCard(pdf, dataUrl, x, y, cardW, cardH, bleed, options.showCropMarks);
+    onProgress?.(i + 1, rows.length);
+  }
+
+  if (options.includeBacks) {
+    // The back is identical for every card (see types.ts), so it's rendered
+    // once and tiled into the same grid cells the front pages used — one
+    // back page per front page, same count of cards per page, so the two
+    // sheets cut in register with each other.
+    const backDataUrl = await renderCardBackToDataUrl(template, assets);
+    const totalPages = Math.ceil(rows.length / layout.perPage);
+    for (let page = 0; page < totalPages; page++) {
+      pdf.addPage([paper.widthMm, paper.heightMm]);
+      const cardsOnPage = Math.min(layout.perPage, rows.length - page * layout.perPage);
+      for (let j = 0; j < cardsOnPage; j++) {
+        const { x, y } = layout.positionFor(page * layout.perPage + j);
+        placeCard(pdf, backDataUrl, x, y, cardW, cardH, bleed, options.showCropMarks);
       }
     }
-    onProgress?.(i + 1, rows.length);
   }
 
   return pdf.output('blob');

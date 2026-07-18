@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { computePageLayout, cropMarksFor, type ExportOptions } from './pdfExport';
 import { PAPER_SIZES } from '../constants/cardSizes';
 
-const options: ExportOptions = { paperSize: 'A4', marginMm: 10, gapMm: 3, showCropMarks: true };
+const options: ExportOptions = { paperSize: 'A4', marginMm: 10, gapMm: 3, showCropMarks: true, includeBacks: false };
 
 describe('computePageLayout', () => {
   it('fits poker cards (63x88mm) on A4 with a 10mm margin and 3mm gap', () => {
@@ -35,7 +35,7 @@ describe('computePageLayout', () => {
   });
 
   it('supports the Letter paper size', () => {
-    const letterOptions: ExportOptions = { paperSize: 'Letter', marginMm: 10, gapMm: 3, showCropMarks: true };
+    const letterOptions: ExportOptions = { paperSize: 'Letter', marginMm: 10, gapMm: 3, showCropMarks: true, includeBacks: false };
     const layout = computePageLayout(PAPER_SIZES.Letter, { widthMm: 63, heightMm: 88 }, letterOptions);
     expect(layout.cols).toBeGreaterThanOrEqual(1);
     expect(layout.rowsPerPage).toBeGreaterThanOrEqual(1);
