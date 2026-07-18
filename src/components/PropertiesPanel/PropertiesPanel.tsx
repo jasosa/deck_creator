@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useTemplateStore } from '../../store/useTemplateStore';
-import { pxToMm, mmToPx } from '../../utils/units';
+import { pxToMm, mmToPx, clampMin } from '../../utils/units';
 import { EDITOR_DPI } from '../../constants/cardSizes';
 import type { CardElement, CardElementPatch } from '../../types';
 import './PropertiesPanel.css';
@@ -87,11 +87,11 @@ export function PropertiesPanel() {
         </label>
         <label>
           Width (mm)
-          <input type="number" min={1} value={round(pxToMm(el.width, EDITOR_DPI))} onChange={(e) => patch({ width: mmToPx(+e.target.value, EDITOR_DPI) })} />
+          <input type="number" min={1} value={round(pxToMm(el.width, EDITOR_DPI))} onChange={(e) => patch({ width: clampMin(mmToPx(+e.target.value, EDITOR_DPI), 5) })} />
         </label>
         <label>
           Height (mm)
-          <input type="number" min={1} value={round(pxToMm(el.height, EDITOR_DPI))} onChange={(e) => patch({ height: mmToPx(+e.target.value, EDITOR_DPI) })} />
+          <input type="number" min={1} value={round(pxToMm(el.height, EDITOR_DPI))} onChange={(e) => patch({ height: clampMin(mmToPx(+e.target.value, EDITOR_DPI), 5) })} />
         </label>
         <label>
           Rotation (°)
@@ -224,7 +224,7 @@ function FontControls({
         </label>
         <label>
           Size
-          <input type="number" min={4} value={el.fontSize} onChange={(e) => patch({ fontSize: +e.target.value })} />
+          <input type="number" min={4} value={el.fontSize} onChange={(e) => patch({ fontSize: clampMin(+e.target.value, 4) })} />
         </label>
         <label>
           Color

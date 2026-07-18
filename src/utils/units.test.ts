@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mmToPx, pxToMm } from './units';
+import { mmToPx, pxToMm, clampMin } from './units';
 
 describe('mmToPx / pxToMm', () => {
   it('converts mm to px at a given DPI', () => {
@@ -26,5 +26,23 @@ describe('mmToPx / pxToMm', () => {
         expect(mmToPx(pxToMm(px, dpi), dpi)).toBeCloseTo(px, 6);
       }
     }
+  });
+});
+
+describe('clampMin', () => {
+  it('passes through values at or above the minimum', () => {
+    expect(clampMin(10, 5)).toBe(10);
+    expect(clampMin(5, 5)).toBe(5);
+  });
+
+  it('floors values below the minimum', () => {
+    expect(clampMin(1, 5)).toBe(5);
+    expect(clampMin(-100, 5)).toBe(5);
+  });
+
+  it('floors NaN and Infinity from cleared/malformed inputs', () => {
+    expect(clampMin(NaN, 5)).toBe(5);
+    expect(clampMin(Infinity, 5)).toBe(5);
+    expect(clampMin(-Infinity, 5)).toBe(5);
   });
 });
