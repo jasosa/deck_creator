@@ -132,6 +132,38 @@ describe('alignSelectedElements', () => {
 
     expect(useTemplateStore.getState().template.elements.find((e) => e.id === a.id)!.x).toBe(5);
   });
+
+  it('centers selected elements on the horizontal midpoint of the selection bounding box', () => {
+    const a = addLabel();
+    const b = addLabel();
+    useTemplateStore.getState().updateElement(a.id, { x: 5, width: 10 });
+    useTemplateStore.getState().updateElement(b.id, { x: 50, width: 20 });
+    useTemplateStore.getState().selectElement(a.id);
+    useTemplateStore.getState().selectElement(b.id, true);
+
+    useTemplateStore.getState().alignSelectedElements('center');
+
+    // bounding box spans x=[5, 70], center = 37.5
+    const elements = useTemplateStore.getState().template.elements;
+    expect(elements.find((e) => e.id === a.id)!.x).toBe(32.5);
+    expect(elements.find((e) => e.id === b.id)!.x).toBe(27.5);
+  });
+
+  it('aligns selected elements to the vertical midpoint of the selection bounding box', () => {
+    const a = addLabel();
+    const b = addLabel();
+    useTemplateStore.getState().updateElement(a.id, { y: 5, height: 10 });
+    useTemplateStore.getState().updateElement(b.id, { y: 50, height: 20 });
+    useTemplateStore.getState().selectElement(a.id);
+    useTemplateStore.getState().selectElement(b.id, true);
+
+    useTemplateStore.getState().alignSelectedElements('middle');
+
+    // bounding box spans y=[5, 70], center = 37.5
+    const elements = useTemplateStore.getState().template.elements;
+    expect(elements.find((e) => e.id === a.id)!.y).toBe(32.5);
+    expect(elements.find((e) => e.id === b.id)!.y).toBe(27.5);
+  });
 });
 
 describe('undo/redo', () => {

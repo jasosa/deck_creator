@@ -53,6 +53,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
   font-size: 12px;
   color: #475569;
 }

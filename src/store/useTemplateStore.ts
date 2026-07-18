@@ -60,7 +60,7 @@ function defaultElement(type: ElementType, index: number): CardElement {
   }
 }
 
-export type AlignEdge = 'left' | 'right' | 'top' | 'bottom';
+export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center' | 'middle';
 
 type TemplateStore = {
   template: Template;
@@ -251,18 +251,24 @@ export const useTemplateStore = create<TemplateStore>()(
             const selected = s.template.elements.filter((el) => s.selectedElementIds.includes(el.id));
             if (selected.length < 2) return {};
 
-            let value: number;
-            if (edge === 'left') value = Math.min(...selected.map((el) => el.x));
-            else if (edge === 'top') value = Math.min(...selected.map((el) => el.y));
-            else if (edge === 'right') value = Math.max(...selected.map((el) => el.x + el.width));
-            else value = Math.max(...selected.map((el) => el.y + el.height));
+            // 'center'/'middle' align to the selection's bounding-box center
+            // (same min/max extent 'left'/'right'/'top'/'bottom' already
+            // align to), not the average of each element's own center.
+            const left = Math.min(...selected.map((el) => el.x));
+            const right = Math.max(...selected.map((el) => el.x + el.width));
+            const top = Math.min(...selected.map((el) => el.y));
+            const bottom = Math.max(...selected.map((el) => el.y + el.height));
+            const centerX = (left + right) / 2;
+            const centerY = (top + bottom) / 2;
 
             const elements = s.template.elements.map((el) => {
               if (!s.selectedElementIds.includes(el.id)) return el;
-              if (edge === 'left') return { ...el, x: value };
-              if (edge === 'right') return { ...el, x: value - el.width };
-              if (edge === 'top') return { ...el, y: value };
-              return { ...el, y: value - el.height };
+              if (edge === 'left') return { ...el, x: left };
+              if (edge === 'right') return { ...el, x: right - el.width };
+              if (edge === 'center') return { ...el, x: centerX - el.width / 2 };
+              if (edge === 'top') return { ...el, y: top };
+              if (edge === 'bottom') return { ...el, y: bottom - el.height };
+              return { ...el, y: centerY - el.height / 2 };
             });
             return { template: { ...s.template, elements } };
           }),

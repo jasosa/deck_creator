@@ -37,8 +37,10 @@ export function PropertiesPanel() {
           <span>Align to selection</span>
           <div className="properties-panel__zindex-buttons">
             <button onClick={() => alignSelectedElements('left')} title="Align left">⊢</button>
+            <button onClick={() => alignSelectedElements('center')} title="Align center (horizontal)">↔</button>
             <button onClick={() => alignSelectedElements('right')} title="Align right">⊣</button>
             <button onClick={() => alignSelectedElements('top')} title="Align top">⊤</button>
+            <button onClick={() => alignSelectedElements('middle')} title="Align middle (vertical)">↕</button>
             <button onClick={() => alignSelectedElements('bottom')} title="Align bottom">⊥</button>
           </div>
         </div>
