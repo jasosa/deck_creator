@@ -71,6 +71,10 @@ export const TemplateSchema = z.object({
     color: z.string(),
   }),
   elements: z.array(CardElementSchema),
+  // .default() lets templates saved before bleed/safe-zone existed keep
+  // loading — missing keys are filled in rather than rejected.
+  bleedMm: z.number().min(0).default(2),
+  safeZoneMm: z.number().min(0).default(3),
 });
 
 export const TemplateBundleSchema = z.object({

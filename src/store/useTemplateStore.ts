@@ -20,6 +20,8 @@ const DEFAULT_TEMPLATE: Template = {
   cardSize: CARD_SIZE_PRESETS[0],
   background: { assetId: null, color: '#ffffff' },
   elements: [],
+  bleedMm: 2,
+  safeZoneMm: 3,
 };
 
 function newId(): string {
@@ -71,6 +73,8 @@ type TemplateStore = {
   setTemplateName: (name: string) => void;
   setCardSize: (preset: CardSizePreset) => void;
   setCustomCardSize: (widthMm: number, heightMm: number) => void;
+  setBleedMm: (mm: number) => void;
+  setSafeZoneMm: (mm: number) => void;
   setBackgroundColor: (color: string) => void;
   setBackgroundAsset: (assetId: string | null) => void;
 
@@ -162,6 +166,10 @@ export const useTemplateStore = create<TemplateStore>()(
               cardSize: { name: 'Custom', widthMm, heightMm, custom: true },
             },
           })),
+
+        setBleedMm: (mm) => set((s) => ({ template: { ...s.template, bleedMm: mm } })),
+
+        setSafeZoneMm: (mm) => set((s) => ({ template: { ...s.template, safeZoneMm: mm } })),
 
         setBackgroundColor: (color) =>
           set((s) => ({
@@ -320,7 +328,11 @@ export const useTemplateStore = create<TemplateStore>()(
       {
         name: 'deck-card-creator-template',
         storage: createJSONStorage<PersistedTemplateState>(() => idbStorage),
-        version: 1,
+        // Bumped from 1 -> 2 for the bleedMm/safeZoneMm fields (see types.ts,
+        // templateSchema.ts). Version mismatch is what makes `migrate` below
+        // actually run for existing users' v1 data — the zod defaults then
+        // backfill the new fields rather than the schema rejecting old saves.
+        version: 2,
         partialize: (s) => ({ template: s.template, assets: s.assets }),
         migrate: (persistedState) => {
           const result = TemplateBundleSchema.safeParse(persistedState);

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Stage, Layer, Rect, Image as KonvaImage, Transformer } from 'react-konva';
+import { Stage, Layer, Group, Rect, Image as KonvaImage, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import { useTemplateStore } from '../../store/useTemplateStore';
 import { mmToPx } from '../../utils/units';
@@ -29,8 +29,14 @@ export function CanvasStage() {
   const nodeRefs = useRef<Map<string, Konva.Node>>(new Map());
   const transformerRef = useRef<Konva.Transformer>(null);
 
-  const widthPx = mmToPx(template.cardSize.widthMm, EDITOR_DPI);
-  const heightPx = mmToPx(template.cardSize.heightMm, EDITOR_DPI);
+  const trimWidthPx = mmToPx(template.cardSize.widthMm, EDITOR_DPI);
+  const trimHeightPx = mmToPx(template.cardSize.heightMm, EDITOR_DPI);
+  const bleedPx = mmToPx(template.bleedMm, EDITOR_DPI);
+  const safeZonePx = mmToPx(template.safeZoneMm, EDITOR_DPI);
+  const widthPx = trimWidthPx + bleedPx * 2;
+  const heightPx = trimHeightPx + bleedPx * 2;
+  const safeZoneWidthPx = trimWidthPx - safeZonePx * 2;
+  const safeZoneHeightPx = trimHeightPx - safeZonePx * 2;
 
   const backgroundAsset = template.background.assetId ? assets[template.background.assetId] : undefined;
   const backgroundImg = useHtmlImage(backgroundAsset?.dataUrl);
@@ -136,30 +142,55 @@ export function CanvasStage() {
       }}
     >
       <Layer>
-        <Rect
-          x={0}
-          y={0}
-          width={widthPx}
-          height={heightPx}
-          fill={template.background.color}
-          stroke="#cbd5e1"
-          strokeWidth={1}
-          listening={false}
-        />
-        {backgroundImg && (
-          <KonvaImage image={backgroundImg} x={0} y={0} width={widthPx} height={heightPx} listening={false} />
-        )}
-        {template.elements.map((el) => (
-          <ElementNode
-            key={el.id}
-            el={el}
-            onSelect={selectElement}
-            onChange={updateElement}
-            previewRow={previewRow}
-            assets={assets}
-            registerRef={registerRef}
-          />
-        ))}
+        <Group x={bleedPx} y={bleedPx}>
+          <Rect x={-bleedPx} y={-bleedPx} width={widthPx} height={heightPx} fill={template.background.color} listening={false} />
+          {backgroundImg && (
+            <KonvaImage
+              image={backgroundImg}
+              x={-bleedPx}
+              y={-bleedPx}
+              width={widthPx}
+              height={heightPx}
+              listening={false}
+            />
+          )}
+          {bleedPx > 0 && (
+            <Rect
+              x={-bleedPx}
+              y={-bleedPx}
+              width={widthPx}
+              height={heightPx}
+              stroke="#94a3b8"
+              strokeWidth={1}
+              dash={[4, 4]}
+              listening={false}
+            />
+          )}
+          <Rect x={0} y={0} width={trimWidthPx} height={trimHeightPx} stroke="#cbd5e1" strokeWidth={1} listening={false} />
+          {safeZonePx > 0 && safeZoneWidthPx > 0 && safeZoneHeightPx > 0 && (
+            <Rect
+              x={safeZonePx}
+              y={safeZonePx}
+              width={safeZoneWidthPx}
+              height={safeZoneHeightPx}
+              stroke="#f97316"
+              strokeWidth={1}
+              dash={[4, 4]}
+              listening={false}
+            />
+          )}
+          {template.elements.map((el) => (
+            <ElementNode
+              key={el.id}
+              el={el}
+              onSelect={selectElement}
+              onChange={updateElement}
+              previewRow={previewRow}
+              assets={assets}
+              registerRef={registerRef}
+            />
+          ))}
+        </Group>
         <Transformer
           ref={transformerRef}
           rotateEnabled

@@ -19,7 +19,7 @@ function resolveFieldValue(column: string | null, row: Record<string, string> | 
 }
 
 async function addElementToLayer(
-  layer: Konva.Layer,
+  layer: Konva.Group,
   el: CardElement,
   assets: Record<string, ImageAsset>,
   row: Record<string, string> | undefined,
@@ -86,8 +86,11 @@ export async function renderCardToDataUrl(
   assets: Record<string, ImageAsset>,
   row: Record<string, string> | undefined,
 ): Promise<string> {
-  const widthPx = mmToPx(template.cardSize.widthMm, EDITOR_DPI);
-  const heightPx = mmToPx(template.cardSize.heightMm, EDITOR_DPI);
+  const trimWidthPx = mmToPx(template.cardSize.widthMm, EDITOR_DPI);
+  const trimHeightPx = mmToPx(template.cardSize.heightMm, EDITOR_DPI);
+  const bleedPx = mmToPx(template.bleedMm, EDITOR_DPI);
+  const widthPx = trimWidthPx + bleedPx * 2;
+  const heightPx = trimHeightPx + bleedPx * 2;
 
   const container = document.createElement('div');
   container.style.position = 'absolute';
@@ -99,21 +102,28 @@ export async function renderCardToDataUrl(
     const stage = new Konva.Stage({ container, width: widthPx, height: heightPx });
     const layer = new Konva.Layer();
     stage.add(layer);
+    // Element x/y stay trim-box-relative (see CanvasStage.tsx); offsetting
+    // this group by the bleed amount is what grows the printed art into the
+    // bleed strip without renumbering any element's stored coordinates.
+    const content = new Konva.Group({ x: bleedPx, y: bleedPx });
+    layer.add(content);
 
-    layer.add(new Konva.Rect({ x: 0, y: 0, width: widthPx, height: heightPx, fill: template.background.color }));
+    content.add(
+      new Konva.Rect({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, fill: template.background.color }),
+    );
 
     const bgAsset = template.background.assetId ? assets[template.background.assetId] : undefined;
     if (bgAsset) {
       try {
         const img = await loadImage(bgAsset.dataUrl);
-        layer.add(new Konva.Image({ x: 0, y: 0, width: widthPx, height: heightPx, image: img }));
+        content.add(new Konva.Image({ x: -bleedPx, y: -bleedPx, width: widthPx, height: heightPx, image: img }));
       } catch {
         /* skip background image that fails to decode */
       }
     }
 
     for (const el of template.elements) {
-      await addElementToLayer(layer, el, assets, row);
+      await addElementToLayer(content, el, assets, row);
     }
 
     layer.draw();

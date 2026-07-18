@@ -35,7 +35,7 @@ is meant to be edited over time, not regenerated from scratch.
 |---|-------|----------|----------|--------|-------|
 | 14 | No Delete/Backspace to remove selection, no Ctrl+D duplicate, no copy/paste | `src/components/CanvasEditor/CanvasStage.tsx` (keydown handler) | Medium | 🔴 Open | |
 | 15 | No redo | same as #2 | Medium | 🟢 Fixed | Ctrl+Shift+Z / Ctrl+Y, plus a Redo button in `TopBar.tsx`. Commit `b17820d`. |
-| 16 | No print bleed, crop marks, or safe-zone guide | `src/utils/renderCard.ts`, `src/utils/pdfExport.ts` | High (domain-critical) | 🔴 Open | |
+| 16 | No print bleed, crop marks, or safe-zone guide | `src/utils/renderCard.ts`, `src/utils/pdfExport.ts` | High (domain-critical) | 🟢 Fixed | `Template` gained `bleedMm`/`safeZoneMm` (defaults 2mm/3mm, migrated via persist `version: 2`); canvas shows trim-line/bleed-outline/safe-zone guides; export renders bleed into each card and draws crop marks (`cropMarksFor` in `pdfExport.ts`), with a gap-vs-bleed overlap warning in `ExportPanel`. |
 | 17 | No warning when card + margins exceed usable page area (silent overflow) | `src/utils/pdfExport.ts` (`computePageLayout`) | Medium | 🔴 Open | `computePageLayout` already extracted/testable — add the check there |
 | 18 | Icon-only buttons have `title` but no `aria-label` | `PropertiesPanel.tsx`, `LayersPanel.tsx` | Low | 🔴 Open | |
 | 19 | Layer list items aren't keyboard-focusable/operable | `src/components/LayersPanel/LayersPanel.tsx` | Low | 🔴 Open | |

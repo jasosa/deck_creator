@@ -7,6 +7,7 @@ export type ExportOptions = {
   paperSize: keyof typeof PAPER_SIZES;
   marginMm: number;
   gapMm: number;
+  showCropMarks: boolean;
 };
 
 export type PageLayout = {
@@ -48,6 +49,31 @@ export function computePageLayout(
   };
 }
 
+export type CropMark = { x1: number; y1: number; x2: number; y2: number };
+
+// Marks start this far outside the trim corner, past any printed bleed, so
+// they never sit on top of bleed art — then run this much further out.
+const CROP_MARK_GAP_MM = 2;
+const CROP_MARK_LENGTH_MM = 4;
+
+// Two line segments per trim corner (one horizontal, one vertical), each
+// pointing away from the card. Pure function so the geometry is testable
+// without going through jsPDF, same as computePageLayout above.
+export function cropMarksFor(x: number, y: number, cardW: number, cardH: number, bleedMm: number): CropMark[] {
+  const gap = bleedMm + CROP_MARK_GAP_MM;
+  const corners: { cx: number; cy: number; dx: 1 | -1; dy: 1 | -1 }[] = [
+    { cx: x, cy: y, dx: -1, dy: -1 },
+    { cx: x + cardW, cy: y, dx: 1, dy: -1 },
+    { cx: x, cy: y + cardH, dx: -1, dy: 1 },
+    { cx: x + cardW, cy: y + cardH, dx: 1, dy: 1 },
+  ];
+
+  return corners.flatMap(({ cx, cy, dx, dy }) => [
+    { x1: cx + dx * gap, y1: cy, x2: cx + dx * (gap + CROP_MARK_LENGTH_MM), y2: cy },
+    { x1: cx, y1: cy + dy * gap, x2: cx, y2: cy + dy * (gap + CROP_MARK_LENGTH_MM) },
+  ]);
+}
+
 export async function exportDeckPdf(
   template: Template,
   assets: Record<string, ImageAsset>,
@@ -64,12 +90,23 @@ export async function exportDeckPdf(
 
   const layout = computePageLayout(paper, template.cardSize, options);
   const pdf = new jsPDF({ unit: 'mm', format: [paper.widthMm, paper.heightMm] });
+  const bleed = template.bleedMm;
 
   for (let i = 0; i < rows.length; i++) {
     const dataUrl = await renderCardToDataUrl(template, assets, rows[i]);
     const { page, x, y } = layout.positionFor(i);
     if (page > 0 && i % layout.perPage === 0) pdf.addPage([paper.widthMm, paper.heightMm]);
-    pdf.addImage(dataUrl, 'PNG', x, y, cardW, cardH);
+    // renderCardToDataUrl rasterizes the bleed-sized canvas (trim + bleed on
+    // each side), so the image must be placed/sized to match, keeping the
+    // trim edge aligned to the page grid computed above.
+    pdf.addImage(dataUrl, 'PNG', x - bleed, y - bleed, cardW + bleed * 2, cardH + bleed * 2);
+    if (options.showCropMarks) {
+      pdf.setDrawColor(0);
+      pdf.setLineWidth(0.15);
+      for (const mark of cropMarksFor(x, y, cardW, cardH, bleed)) {
+        pdf.line(mark.x1, mark.y1, mark.x2, mark.y2);
+      }
+    }
     onProgress?.(i + 1, rows.length);
   }
 

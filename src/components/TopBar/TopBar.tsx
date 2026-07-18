@@ -3,6 +3,7 @@ import { useTemplateStore, useTemporalTemplateStore } from '../../store/useTempl
 import { CARD_SIZE_PRESETS } from '../../constants/cardSizes';
 import { downloadJson } from '../../utils/downloadFile';
 import { TemplateBundleSchema } from '../../utils/templateSchema';
+import { clampMin } from '../../utils/units';
 import './TopBar.css';
 
 export function TopBar() {
@@ -11,6 +12,8 @@ export function TopBar() {
   const setTemplateName = useTemplateStore((s) => s.setTemplateName);
   const setCardSize = useTemplateStore((s) => s.setCardSize);
   const setCustomCardSize = useTemplateStore((s) => s.setCustomCardSize);
+  const setBleedMm = useTemplateStore((s) => s.setBleedMm);
+  const setSafeZoneMm = useTemplateStore((s) => s.setSafeZoneMm);
   const loadTemplateBundle = useTemplateStore((s) => s.loadTemplateBundle);
   const resetTemplate = useTemplateStore((s) => s.resetTemplate);
   const undo = useTemplateStore((s) => s.undo);
@@ -100,6 +103,26 @@ export function TopBar() {
           </select>
         </div>
       )}
+
+      <label className="top-bar__field">
+        Bleed (mm)
+        <input
+          type="number"
+          min={0}
+          value={template.bleedMm}
+          onChange={(e) => setBleedMm(clampMin(+e.target.value, 0))}
+        />
+      </label>
+
+      <label className="top-bar__field">
+        Safe zone (mm)
+        <input
+          type="number"
+          min={0}
+          value={template.safeZoneMm}
+          onChange={(e) => setSafeZoneMm(clampMin(+e.target.value, 0))}
+        />
+      </label>
 
       <div className="top-bar__spacer" />
 

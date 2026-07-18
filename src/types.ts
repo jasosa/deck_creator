@@ -68,6 +68,8 @@ export type Template = {
   cardSize: CardSizePreset;
   background: { assetId: string | null; color: string };
   elements: CardElement[];
+  bleedMm: number;
+  safeZoneMm: number;
 };
 
 export type DataSheet = {
