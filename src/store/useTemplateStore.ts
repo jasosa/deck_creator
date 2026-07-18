@@ -354,6 +354,11 @@ export function useTemporalTemplateStore<T>(selector: (state: TemporalState<Trac
 
 export function getAssetByName(assets: Record<string, ImageAsset>, name: string | undefined | null) {
   if (!name) return undefined;
-  const target = name.trim().toLowerCase();
+  // Cell values may be a bare filename or a full/relative path (Windows or
+  // POSIX); uploaded assets are only ever keyed by their bare filename
+  // (see addAssetFromFile), so match on the last path segment.
+  const trimmed = name.trim();
+  const basename = trimmed.split(/[\\/]/).pop() || trimmed;
+  const target = basename.toLowerCase();
   return Object.values(assets).find((a) => a.name.toLowerCase() === target);
 }

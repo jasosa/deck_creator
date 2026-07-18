@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTemplateStore } from './useTemplateStore';
+import { useTemplateStore, getAssetByName } from './useTemplateStore';
+import type { ImageAsset } from '../types';
 
 // The store coalesces rapid template edits into a single undo step (see
 // leadingEdgeDebounce.ts) using a 500ms real-world debounce. Fake timers
@@ -247,5 +248,33 @@ describe('undo/redo', () => {
     // the first edit of the fresh template
     addLabel();
     expect(useTemplateStore.temporal.getState().pastStates.length).toBeGreaterThan(0);
+  });
+});
+
+describe('getAssetByName', () => {
+  function assetSet(): Record<string, ImageAsset> {
+    const asset: ImageAsset = { id: 'a1', name: 'Goblin_WB.png', dataUrl: 'data:image/png;base64,' };
+    return { [asset.id]: asset };
+  }
+
+  it('matches a bare filename case-insensitively', () => {
+    expect(getAssetByName(assetSet(), 'goblin_wb.PNG')?.id).toBe('a1');
+  });
+
+  it('matches when the cell value is a POSIX-style relative path', () => {
+    expect(getAssetByName(assetSet(), 'img/Goblin_WB.png')?.id).toBe('a1');
+  });
+
+  it('matches when the cell value is a full Windows path', () => {
+    expect(
+      getAssetByName(assetSet(), 'C:\\Users\\Juanan\\Documents\\Games\\Cards\\img\\Goblin_WB.png')?.id,
+    ).toBe('a1');
+  });
+
+  it('returns undefined for a missing, empty, or null name', () => {
+    expect(getAssetByName(assetSet(), 'missing.png')).toBeUndefined();
+    expect(getAssetByName(assetSet(), '')).toBeUndefined();
+    expect(getAssetByName(assetSet(), null)).toBeUndefined();
+    expect(getAssetByName(assetSet(), undefined)).toBeUndefined();
   });
 });
