@@ -1,7 +1,6 @@
 .properties-panel {
   padding: 12px;
   background: #f8fafc;
-  border-left: 1px solid #e2e8f0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

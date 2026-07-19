@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { TopBar } from './components/TopBar/TopBar';
 import { Toolbox } from './components/Toolbox/Toolbox';
-import { LayersPanel } from './components/LayersPanel/LayersPanel';
 import { CanvasStage } from './components/CanvasEditor';
-import { PropertiesPanel } from './components/PropertiesPanel/PropertiesPanel';
-import { ExportPanel } from './components/ExportPanel/ExportPanel';
-import { DataPanel } from './components/DataPanel/DataPanel';
 import { ResizeHandle } from './components/ResizeHandle/ResizeHandle';
+import { DockZone } from './components/DockZone/DockZone';
+import { PANEL_REGISTRY } from './components/DockZone/panelRegistry';
+import { FloatingPanel, PANEL_DRAG_MIME } from './components/PanelChrome/PanelChrome';
 import { useResizablePanel } from './hooks/useResizablePanel';
 import { useTemplateStore } from './store/useTemplateStore';
+import { usePanelLayoutStore, type PanelId } from './store/usePanelLayoutStore';
 import './App.css';
 
 const LEFT_MIN = 180;
@@ -27,6 +27,8 @@ function App() {
   const [leftWidth, setLeftWidth] = useResizablePanel('panel-width-left', 220);
   const [rightWidth, setRightWidth] = useResizablePanel('panel-width-right', 260);
   const [bottomHeight, setBottomHeight] = useResizablePanel('panel-height-bottom', 260);
+  const floating = usePanelLayoutStore((s) => s.floating);
+  const floatPanel = usePanelLayoutStore((s) => s.floatPanel);
 
   const handleLeftResize = useCallback(
     (delta: number) => setLeftWidth((w) => clamp(w + delta, LEFT_MIN, LEFT_MAX)),
@@ -43,6 +45,22 @@ function App() {
     [setBottomHeight],
   );
 
+  // Dragging a docked panel's header and dropping it on the canvas floats
+  // it at the drop point — the one place a panel can be unpinned by drag
+  // rather than via its header's pin button.
+  const handleCanvasDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // See DockZone.tsx's handleDragOver for why this doesn't gate on
+    // `dataTransfer.types.includes(...)` before calling preventDefault().
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+  const handleCanvasDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const id = e.dataTransfer.getData(PANEL_DRAG_MIME);
+    if (!id) return;
+    e.preventDefault();
+    floatPanel(id as PanelId, { x: e.clientX, y: e.clientY });
+  };
+
   // Storage now rehydrates asynchronously from IndexedDB (see useTemplateStore.ts),
   // so without this gate the app would flash the blank default template for a
   // moment before the saved one loads.
@@ -56,20 +74,29 @@ function App() {
       <div className="app__body">
         <div className="app__left" style={{ width: leftWidth }}>
           <Toolbox />
-          <LayersPanel />
+          <DockZone zone="left" />
         </div>
         <ResizeHandle orientation="vertical" onResize={handleLeftResize} />
-        <div className="app__canvas-area">
+        <div className="app__canvas-area" onDragOver={handleCanvasDragOver} onDrop={handleCanvasDrop}>
           <CanvasStage />
         </div>
         <ResizeHandle orientation="vertical" onResize={handleRightResize} />
         <div className="app__right" style={{ width: rightWidth }}>
-          <PropertiesPanel />
-          <ExportPanel />
+          <DockZone zone="right" />
         </div>
       </div>
       <ResizeHandle orientation="horizontal" onResize={handleBottomResize} />
-      <DataPanel height={bottomHeight} />
+      <DockZone zone="bottom" style={{ height: bottomHeight, flex: 'none' }} />
+
+      <div className="app__float-layer">
+        {(Object.keys(floating) as PanelId[]).map((id) =>
+          floating[id] ? (
+            <FloatingPanel key={id} id={id} title={PANEL_REGISTRY[id].title}>
+              {PANEL_REGISTRY[id].render()}
+            </FloatingPanel>
+          ) : null,
+        )}
+      </div>
     </div>
   );
 }

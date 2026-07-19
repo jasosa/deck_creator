@@ -1,0 +1,39 @@
+.dock-zone {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.dock-zone--column {
+  flex-direction: column;
+}
+
+.dock-zone--row {
+  flex-direction: row;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dock-zone--row > .panel-chrome--docked {
+  border-right: 1px solid #e2e8f0;
+}
+
+.dock-zone--row > .panel-chrome--docked:last-child {
+  border-right: none;
+}
+
+.dock-zone--drag-over,
+.dock-zone--float-hover {
+  outline: 2px dashed #6366f1;
+  outline-offset: -2px;
+}
+
+.dock-zone__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 16px;
+}

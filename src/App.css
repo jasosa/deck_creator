@@ -24,15 +24,11 @@
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  border-right: 1px solid #e2e8f0;
 }
 
-.app__left .toolbox {
+.app__left > .toolbox {
   flex-shrink: 0;
-}
-
-.app__left .layers-panel {
-  flex: 1;
-  min-height: 0;
 }
 
 .app__canvas-area {
@@ -54,4 +50,12 @@
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  border-left: 1px solid #e2e8f0;
+}
+
+.app__float-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
 }

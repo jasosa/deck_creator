@@ -3,7 +3,7 @@ import { useTemplateStore } from '../../store/useTemplateStore';
 import { parseExcelFile } from '../../utils/excel';
 import './DataPanel.css';
 
-export function DataPanel({ height }: { height: number }) {
+export function DataPanel() {
   const dataSheet = useTemplateStore((s) => s.dataSheet);
   const setDataSheet = useTemplateStore((s) => s.setDataSheet);
   const previewRowIndex = useTemplateStore((s) => s.previewRowIndex);
@@ -34,7 +34,7 @@ export function DataPanel({ height }: { height: number }) {
   const rowCount = dataSheet?.rows.length ?? 0;
 
   return (
-    <div className="data-panel" style={{ height }}>
+    <div className="data-panel">
       <section>
         <h3>Data sheet (Excel)</h3>
         <button onClick={() => excelInputRef.current?.click()}>Upload .xlsx</button>
